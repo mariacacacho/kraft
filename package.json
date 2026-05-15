@@ -1,0 +1,22 @@
+{
+  "name": "kraft",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server run start",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "db:migrate": "npm --prefix server run db:migrate",
+    "db:migrate:down": "npm --prefix server run db:migrate:down",
+    "db:migrate:status": "npm --prefix server run db:migrate:status",
+    "db:migrate:create": "npm --prefix server run db:migrate:create --",
+    "db:seed": "npm --prefix server run db:seed",
+    "user:create": "npm --prefix server run user:create --"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
