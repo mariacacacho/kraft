@@ -11,7 +11,8 @@
     "db:migrate:status": "ts-node src/db/migrate.ts status",
     "db:migrate:create": "ts-node src/db/migrate.ts create",
     "db:seed": "ts-node src/db/seed.ts",
-    "user:create": "ts-node src/scripts/create-user.ts"
+    "user:create": "ts-node src/scripts/create-user.ts",
+    "user:delete": "ts-node src/scripts/delete-user.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
