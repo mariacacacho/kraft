@@ -31,6 +31,7 @@ export interface ProjectMember {
 export type TicketStatus = 'todo' | 'in_progress' | 'in_review' | 'done';
 export type TicketPriority = 'low' | 'medium' | 'high';
 export type TicketType = 'cotizacion' | 'ajuste';
+export type PaymentStatus = 'pending' | 'paid';
 
 export interface Ticket {
   id: string;
@@ -46,6 +47,9 @@ export interface Ticket {
   due_date?: string;
   tags: string[];
   position: number;
+  estimated_hours?: number | null;
+  payment_status: PaymentStatus;
+  cost?: number;
   comment_count?: number;
   attachment_count?: number;
   created_at: string;

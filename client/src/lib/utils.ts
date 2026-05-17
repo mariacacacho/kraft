@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { TicketPriority, TicketStatus, TicketType } from '../types';
+import { PaymentStatus, TicketPriority, TicketStatus, TicketType } from '../types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,6 +23,18 @@ export const TYPE_CONFIG: Record<TicketType, { label: string; color: string; bg:
   cotizacion: { label: 'Cotización', color: 'text-violet-700', bg: 'bg-violet-50' },
   ajuste: { label: 'Ajuste', color: 'text-sky-700', bg: 'bg-sky-50' },
 };
+
+export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Pending', color: 'text-orange-600', bg: 'bg-orange-50' },
+  paid:    { label: 'Paid',    color: 'text-emerald-600', bg: 'bg-emerald-50' },
+};
+
+export const HOURLY_RATE = 18;
+
+export function formatCost(hours?: number | null): string {
+  if (!hours) return '$0.00';
+  return `$${(hours * HOURLY_RATE).toFixed(2)}`;
+}
 
 export const PROJECT_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
-import { TicketStatus, TicketPriority, TicketType } from '../types';
+import { X, Clock, DollarSign } from 'lucide-react';
+import { TicketStatus, TicketPriority, TicketType, PaymentStatus } from '../types';
 import api from '../lib/api';
 import { useProjectStore } from '../store/project';
+import { HOURLY_RATE } from '../lib/utils';
 
 interface Props {
   defaultStatus: TicketStatus;
@@ -19,8 +20,12 @@ export default function CreateTicketModal({ defaultStatus, onClose, onCreated }:
   const [type, setType] = useState<TicketType>('ajuste');
   const [dueDate, setDueDate] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [estimatedHours, setEstimatedHours] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const cost = estimatedHours ? parseFloat(estimatedHours) * HOURLY_RATE : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,10 +33,7 @@ export default function CreateTicketModal({ defaultStatus, onClose, onCreated }:
     setLoading(true);
     setError('');
     try {
-      const tags = tagsInput
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
+      const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
 
       await api.post('/tickets', {
         title: title.trim(),
@@ -42,6 +44,8 @@ export default function CreateTicketModal({ defaultStatus, onClose, onCreated }:
         projectId: activeProjectId,
         dueDate: dueDate || undefined,
         tags,
+        estimatedHours: estimatedHours ? parseFloat(estimatedHours) : undefined,
+        paymentStatus,
       });
       onCreated();
       onClose();
@@ -110,6 +114,42 @@ export default function CreateTicketModal({ defaultStatus, onClose, onCreated }:
               <select className="input" value={type} onChange={(e) => setType(e.target.value as TicketType)}>
                 <option value="ajuste">Ajuste</option>
                 <option value="cotizacion">Cotización</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Billing section */}
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Billing</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" /> Est. hours
+                </label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="0"
+                  min="0"
+                  step="0.5"
+                  value={estimatedHours}
+                  onChange={(e) => setEstimatedHours(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5" /> Cost (${HOURLY_RATE}/hr)
+                </label>
+                <div className="input bg-gray-100 text-gray-500 cursor-default">
+                  {cost > 0 ? `$${cost.toFixed(2)}` : '—'}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Payment status</label>
+              <select className="input" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
               </select>
             </div>
           </div>

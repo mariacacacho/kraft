@@ -58,7 +58,8 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
         u.name AS creator_name,
         u.avatar_url AS creator_avatar,
         (SELECT COUNT(*) FROM comments c WHERE c.ticket_id = t.id) AS comment_count,
-        (SELECT COUNT(*) FROM attachments a WHERE a.ticket_id = t.id) AS attachment_count
+        (SELECT COUNT(*) FROM attachments a WHERE a.ticket_id = t.id) AS attachment_count,
+        ROUND(COALESCE(t.estimated_hours, 0) * 18, 2) AS cost
       FROM tickets t
       JOIN users u ON u.id = t.created_by
       WHERE t.project_id = $1
@@ -81,7 +82,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
 });
 
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { title, description, status, priority, type, projectId, dueDate, tags } = req.body;
+  const { title, description, status, priority, type, projectId, dueDate, tags, estimatedHours, paymentStatus } = req.body;
 
   if (!title || !projectId) {
     res.status(400).json({ error: 'title and projectId are required' });
@@ -100,8 +101,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     );
 
     const result = await query(
-      `INSERT INTO tickets (title, description, status, priority, type, project_id, created_by, due_date, tags, position)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      `INSERT INTO tickets (title, description, status, priority, type, project_id, created_by, due_date, tags, position, estimated_hours, payment_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
       [
         title,
         description || null,
@@ -113,6 +114,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
         dueDate || null,
         tags || [],
         posResult.rows[0].next_pos,
+        estimatedHours ?? null,
+        paymentStatus || 'pending',
       ]
     );
 
@@ -131,7 +134,8 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const result = await query(
-      `SELECT t.*, u.name AS creator_name, u.avatar_url AS creator_avatar
+      `SELECT t.*, u.name AS creator_name, u.avatar_url AS creator_avatar,
+        ROUND(COALESCE(t.estimated_hours, 0) * 18, 2) AS cost
        FROM tickets t
        JOIN users u ON u.id = t.created_by
        WHERE t.id = $1`,
@@ -166,7 +170,7 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 });
 
 router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { title, description, status, priority, type, dueDate, tags, position } = req.body;
+  const { title, description, status, priority, type, dueDate, tags, position, estimatedHours, paymentStatus } = req.body;
 
   try {
     if (!(await isMemberOfTicketProject(req.params.id, req.userId!))) {
@@ -176,17 +180,20 @@ router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 
     const result = await query(
       `UPDATE tickets SET
-        title       = COALESCE($1, title),
-        description = COALESCE($2, description),
-        status      = COALESCE($3, status),
-        priority    = COALESCE($4, priority),
-        type        = COALESCE($5, type),
-        due_date    = COALESCE($6, due_date),
-        tags        = COALESCE($7, tags),
-        position    = COALESCE($8, position),
-        updated_at  = NOW()
-       WHERE id = $9 RETURNING *`,
-      [title, description, status, priority, type, dueDate, tags, position, req.params.id]
+        title            = COALESCE($1, title),
+        description      = COALESCE($2, description),
+        status           = COALESCE($3, status),
+        priority         = COALESCE($4, priority),
+        type             = COALESCE($5, type),
+        due_date         = COALESCE($6, due_date),
+        tags             = COALESCE($7, tags),
+        position         = COALESCE($8, position),
+        estimated_hours  = COALESCE($9, estimated_hours),
+        payment_status   = COALESCE($10, payment_status),
+        updated_at       = NOW()
+       WHERE id = $11 RETURNING *,
+        ROUND(COALESCE(estimated_hours, 0) * 18, 2) AS cost`,
+      [title, description, status, priority, type, dueDate, tags, position, estimatedHours ?? null, paymentStatus ?? null, req.params.id]
     );
 
     res.json(result.rows[0]);

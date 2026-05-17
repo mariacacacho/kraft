@@ -1,6 +1,6 @@
-import { MessageSquare, Paperclip, Calendar, GripVertical } from 'lucide-react';
+import { MessageSquare, Paperclip, Calendar, GripVertical, Clock, DollarSign } from 'lucide-react';
 import { Ticket } from '../types';
-import { PRIORITY_CONFIG, TYPE_CONFIG, cn, formatDate, isOverdue } from '../lib/utils';
+import { PRIORITY_CONFIG, TYPE_CONFIG, PAYMENT_STATUS_CONFIG, cn, formatDate, isOverdue, formatCost } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { DraggableProvided } from '@hello-pangea/dnd';
 
@@ -14,6 +14,7 @@ export default function TicketCard({ ticket, provided, isDragging }: Props) {
   const navigate = useNavigate();
   const priority = PRIORITY_CONFIG[ticket.priority];
   const type = TYPE_CONFIG[ticket.type];
+  const payment = PAYMENT_STATUS_CONFIG[ticket.payment_status];
   const overdue = isOverdue(ticket.due_date) && ticket.status !== 'done';
 
   return (
@@ -59,6 +60,19 @@ export default function TicketCard({ ticket, provided, isDragging }: Props) {
         </div>
       )}
 
+      {ticket.estimated_hours && (
+        <div className="flex items-center justify-between mb-3">
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <Clock className="w-3.5 h-3.5" />
+            {ticket.estimated_hours}h
+          </span>
+          <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+            <DollarSign className="w-3.5 h-3.5" />
+            {formatCost(ticket.estimated_hours)}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-2 border-t border-gray-50">
         <div className="flex items-center gap-3 text-xs text-gray-400">
           <span className="flex items-center gap-1">
@@ -70,6 +84,7 @@ export default function TicketCard({ ticket, provided, isDragging }: Props) {
             {ticket.attachment_count ?? 0}
           </span>
         </div>
+        <span className={cn('badge', payment.bg, payment.color)}>{payment.label}</span>
       </div>
     </div>
   );

@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Calendar, Tag, Paperclip, MessageSquare,
-  Trash2, Edit2, Check, X, Upload, Send
+  Trash2, Edit2, Check, X, Upload, Send, Clock, DollarSign
 } from 'lucide-react';
-import { Ticket, TicketStatus, TicketPriority, TicketType } from '../types';
+import { Ticket, TicketStatus, TicketPriority, TicketType, PaymentStatus } from '../types';
 import api from '../lib/api';
-import { STATUS_CONFIG, PRIORITY_CONFIG, TYPE_CONFIG, cn, formatDate, isOverdue } from '../lib/utils';
+import { STATUS_CONFIG, PRIORITY_CONFIG, TYPE_CONFIG, PAYMENT_STATUS_CONFIG, cn, formatDate, isOverdue, formatCost, HOURLY_RATE } from '../lib/utils';
 import { useProjectStore } from '../store/project';
 import { useAuthStore } from '../store/auth';
 
@@ -97,7 +97,10 @@ export default function TicketDetailPage() {
   const status = STATUS_CONFIG[currentData.status];
   const priority = PRIORITY_CONFIG[currentData.priority];
   const type = TYPE_CONFIG[currentData.type];
+  const payment = PAYMENT_STATUS_CONFIG[currentData.payment_status];
   const overdue = isOverdue(ticket.due_date) && ticket.status !== 'done';
+  const editedHours = editData.estimated_hours ?? ticket.estimated_hours;
+  const previewCost = editedHours ? editedHours * HOURLY_RATE : 0;
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -371,6 +374,65 @@ export default function TicketDetailPage() {
                   </div>
                 ) : (
                   <span className="text-sm text-gray-400 italic">No tags</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-4">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Billing</h3>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Estimated hours
+                </p>
+                {editing ? (
+                  <input
+                    type="number"
+                    className="input text-sm"
+                    placeholder="0"
+                    min="0"
+                    step="0.5"
+                    value={editData.estimated_hours ?? ticket.estimated_hours ?? ''}
+                    onChange={(e) =>
+                      setEditData((d) => ({
+                        ...d,
+                        estimated_hours: e.target.value ? parseFloat(e.target.value) : null,
+                      }))
+                    }
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700">
+                    {ticket.estimated_hours ? `${ticket.estimated_hours}h` : <span className="text-gray-400 italic">Not set</span>}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" /> Development cost
+                </p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {editing && previewCost > 0
+                    ? `$${previewCost.toFixed(2)}`
+                    : formatCost(ticket.estimated_hours)}
+                  <span className="text-xs text-gray-400 font-normal ml-1">(${HOURLY_RATE}/hr)</span>
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Payment status</p>
+                {editing ? (
+                  <select
+                    className="input text-sm"
+                    value={editData.payment_status ?? ticket.payment_status}
+                    onChange={(e) => setEditData((d) => ({ ...d, payment_status: e.target.value as PaymentStatus }))}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                ) : (
+                  <span className={cn('badge', payment.bg, payment.color)}>{payment.label}</span>
                 )}
               </div>
             </div>
