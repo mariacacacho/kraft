@@ -36,7 +36,19 @@ export default function TicketDetailPage() {
   async function handleSave() {
     if (!ticket) return;
     try {
-      await api.put(`/tickets/${ticket.id}`, editData);
+      // Map snake_case Ticket fields → camelCase API params
+      const payload: Record<string, unknown> = {};
+      if (editData.title !== undefined)           payload.title           = editData.title;
+      if (editData.description !== undefined)     payload.description     = editData.description;
+      if (editData.status !== undefined)          payload.status          = editData.status;
+      if (editData.priority !== undefined)        payload.priority        = editData.priority;
+      if (editData.type !== undefined)            payload.type            = editData.type;
+      if (editData.due_date !== undefined)        payload.dueDate         = editData.due_date;
+      if (editData.tags !== undefined)            payload.tags            = editData.tags;
+      if (editData.estimated_hours !== undefined) payload.estimatedHours  = editData.estimated_hours;
+      if (editData.payment_status !== undefined)  payload.paymentStatus   = editData.payment_status;
+
+      await api.put(`/tickets/${ticket.id}`, payload);
       queryClient.invalidateQueries({ queryKey: ['ticket', id] });
       queryClient.invalidateQueries({ queryKey: ['tickets', activeProjectId] });
       setEditing(false);
